@@ -1,0 +1,36 @@
+#!/bin/bas
+
+echo 'installing java'
+sleep 3
+yum install java-1.8.0-openjdk-devel java-1.8.0-openjdk -y
+
+echo 'installing mvn'
+sleep 3
+mkdir /opt/maven -p
+curl -SL http://apache.volia.net/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz | tar xzv  -C /opt/maven --strip-components=1
+echo 'export PATH=/opt/maven/bin:${PATH}' > /etc/profile.d/maven.sh
+
+echo 'installing tomcat'
+sleep 3
+mkdir /opt/tomcat -p
+groupadd tomcat
+useradd -M -s /bin/nologin -g tomcat -d /opt/tomcat tomcat
+curl -SL http://apache.cp.if.ua/tomcat/tomcat-8/v8.5.34/bin/apache-tomcat-8.5.34.tar.gz | tar xzv -C /opt/tomcat --strip-components=1
+chgrp -R tomcat /opt/tomcat
+chmod -R g+r /opt/tomcat/conf
+chmod g+x /opt/tomcat/conf
+chown -R tomcat /opt/tomcat/webapps/ /opt/tomcat/work/ /opt/tomcat/temp/ /opt/tomcat/logs/
+bash -c 'cat tomcat.service_example > /etc/systemd/system/tomcat.service'
+chmod 755 /etc/systemd/system/tomcat.service
+systemctl daemon-reload
+systemctl start tomcat
+systemctl enable tomcat
+firewall-cmd --add-port=8080/tcp --zone=public --permanent
+firewall-cmd --reload
+systemctl restart tomcat
+
+echo 'installing nodejs 11'
+sleep 3
+curl -sL https://rpm.nodesource.com/setup_11.x | bash -
+curl -sL https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+yum install -y nodejs gcc-c++ make yarn
